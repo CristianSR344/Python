@@ -1,0 +1,6 @@
+print("Welcome to the tipo calculator.")
+cuenta = input("What was the total bill? $")
+porcentaje = input("What percentage tip would you like to give? 10,12, or 15? ")
+gente = input("How many people to split the bill?")
+tip = (float(cuenta) - (float(cuenta)(int(porcentaje)/100)))/ int(gente)
+print(f"Each person should pay:{tip}")
