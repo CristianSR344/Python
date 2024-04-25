@@ -35,11 +35,44 @@ def crear_poblacion_inicial(n, matriz):
     return [crear_solucion_aleatoria(matriz) for _ in range(n)]
 
 def combinar(individuo1, individuo2):
-    punto_cruce = random.randint(1, len(individuo1) - 2)
-    nuevo_individuo1 = individuo1[:punto_cruce] + individuo2[punto_cruce:]
-    nuevo_individuo1[0] = 0
-    nuevo_individuo1[-1] = 0
-    return nuevo_individuo1,nuevo_individuo2
+    punto_cruce=random.randrange(2,11)
+    a=individuo1[:punto_cruce]
+    b=individuo1[punto_cruce:]
+    c=individuo2[:punto_cruce]
+    d=individuo2[punto_cruce:]
+
+    nuevo_individuo1=a[:]
+    nuevo_individuo2=c[:]
+    
+    for nodo in d:
+        if not nodo in nuevo_individuo1:
+            nuevo_individuo1.append(nodo)
+
+    
+    for nodo in b:
+        if nodo not in nuevo_individuo2:
+            nuevo_individuo2.append(nodo)
+
+    # Asegurarse de que los nuevos individuos tengan todos los elementos necesarios
+    # Obtener todos los elementos posibles
+    todos_elementos = set(range(len(individuo1)-1))
+    
+    # Encontrar los elementos que faltan
+    faltantes1 = list(todos_elementos - set(nuevo_individuo1))
+    faltantes2 = list(todos_elementos - set(nuevo_individuo2))
+
+    
+    
+    # Añadir los elementos que faltan para completar
+    nuevo_individuo1.extend(faltantes1)
+    nuevo_individuo2.extend(faltantes2)
+    
+    if nuevo_individuo1[-1] != 0:
+        nuevo_individuo1.append(0)
+    
+    if nuevo_individuo2[-1] != 0:
+        nuevo_individuo2.append(0)
+    return nuevo_individuo1, nuevo_individuo2
 
 def selecciona_el_mejor_individuo(poblacion, matriz):
     mejor_individuo = poblacion[0]
@@ -59,28 +92,25 @@ def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
     Tf = temp_final
     individuos=50
     poblacion=crear_poblacion_inicial(individuos,matriz)
-    print (poblacion)
     S,ES=selecciona_el_mejor_individuo(poblacion,matriz)
-    
     Smejor = S
     ESmejor = ES
     while T > Tf:
         n=1
         while n<=300: 
-            Solucion = seleccionar_una_poblacion(poblacion, 1)
-            Snew = combinar(S, Solucion)
-            # Se perturba la solución actual intercambiando dos lugares en la ruta
-            a, b = random.sample(range(1, len(Snew) - 1), 2)  # Elige dos puntos para intercambiar, sin incluir el primero y el último (0)
-            Snew[a], Snew[b] = Snew[b], Snew[a]
+            Solucion = seleccionar_una_poblacion(poblacion, 1)[0]
+            Snew1,Snew2 = combinar(S, Solucion)
+            poblacion.append(Snew1)
+            poblacion.append(Snew2)
             
-            ESnew = calcular_energia(Snew, matriz)
+            temp=[Snew1,Snew2]
+            Snew,ESnew=  selecciona_el_mejor_individuo(temp,matriz)         
             diferencia = ESnew - ES
 
             # Si la nueva solución es mejor, o se acepta una peor con cierta probabilidad para evitar mínimos locales
             if diferencia < 0:
                 S = Snew
                 ES = ESnew
-                temp.append([cont,ESnew])
                 # Si la nueva solución es la mejor hasta el momento, se actualiza Smejor y ESmejor
                 if ES < ESmejor:
                     Smejor = S[:]
@@ -93,15 +123,10 @@ def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
                     ES=ESnew 
                     
             n+=1
-            cont+=1
 
         # Se enfría la temperatura según la tasa de enfriamiento
         T *= coef_enfriamiento 
-         
-    # with open('listas.csv', 'w', newline='') as archivo:
-    #     escritor = csv.writer(archivo)
-    #     escritor.writerows(temp)
-    #     archivo.write('\n')   
+          
     return Smejor, ESmejor
 
 # Parámetros para el algoritmo
@@ -120,8 +145,12 @@ def muestra():
         temp=[best_solucion, best_energy]
         mu.append(temp)
         avg+=best_energy
+        print (best_solucion, best_energy)
+        
         
     avg=avg/30
     
 
-best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+# best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+# print (best_solucion, best_energy)
+muestra()
