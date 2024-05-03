@@ -86,20 +86,34 @@ def selecciona_el_mejor_individuo(poblacion, matriz):
 def seleccionar_una_poblacion(poblacion, n):
     return random.sample(poblacion, n)
 
+def calcular_cercano(p, solucion, energia, m):
+    mejor_diferencia = 10000
+    Scercano=None
+    for individuo in p:
+        EIndividuo = calcular_energia(individuo, m)
+        diferencia = EIndividuo-energia
+        # Asegura que el individuo no sea igual a 'S' y que la diferencia sea menor a la mejor diferencia actual
+        if individuo is not solucion and diferencia < mejor_diferencia:
+            mejor_diferencia = diferencia
+            Scercano=individuo
+
+    return Scercano  
+
 def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
     #Realiza la búsqueda de la mejor solución utilizando el algoritmo de enfriamiento simulado.
     T = temp_inicial
     Tf = temp_final
     individuos=50
     poblacion=crear_poblacion_inicial(individuos,matriz)
-    S,ES=selecciona_el_mejor_individuo(poblacion,matriz)
-    Smejor = S
-    ESmejor = ES
+    S=random.choice(poblacion)
+    ES=calcular_energia(S,matriz)
+    Smejor,ESmejor = S,ES
+      
     while T > Tf:
         n=1
-        while n<=300: 
-            Solucion = seleccionar_una_poblacion(poblacion, 1)[0]
-            Snew1,Snew2 = combinar(S, Solucion)
+        while n<=200: 
+            Stemp=calcular_cercano(poblacion,S,ES,matriz)   
+            Snew1,Snew2 = combinar(S, Stemp)
             poblacion.append(Snew1)
             poblacion.append(Snew2)
             
@@ -126,7 +140,7 @@ def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
 
         # Se enfría la temperatura según la tasa de enfriamiento
         T *= coef_enfriamiento 
-          
+        print(Smejor,ESmejor)  
     return Smejor, ESmejor
 
 # Parámetros para el algoritmo
