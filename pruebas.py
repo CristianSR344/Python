@@ -39,31 +39,97 @@ def calcular_energia(solucion, matriz):
         distancia += matriz[solucion[i]][solucion[i + 1]]
     return distancia
 
-def contra_pared(S, buffer,KEL):
-    # Obtener una nueva estructura vecina aleatoria
-    index=next(iter(S))
+def contra_pared(S, buffer,KEL,poblacion,matriz):
+    print("Estado inicial de S:", S)
+    length = len(poblacion)
+    
+    # Obtener el índice del individuo en S
+    index = next(iter(S))
+    
+    # Obtener la estructura actual y mantener el primer y último elemento como 0
+    estructura_actual = S[index]
+    
+    # Definir un punto de cruce aleatorio
+    punto_cruce = random.randrange(2, len(estructura_actual) - 2)
+    
+    # Dividir la estructura en dos partes
+    a = estructura_actual[:punto_cruce]
+    b = estructura_actual[punto_cruce:]
+    print("Parte A:", a)
+    print("Parte B:", b)
+    
+    # Crear dos nuevos individuos a partir de las dos partes
+    nuevo_individuo1 = a[:]
+    nuevo_individuo2 = b[:-1]
+    
+    # Obtener todos los elementos posibles
+    todos_elementos = set(range(1, len(estructura_actual) - 1))
+    
+    # Encontrar los elementos que faltan
+    faltantes1 = list(todos_elementos - set(nuevo_individuo1))
+    faltantes2 = list(todos_elementos - set(nuevo_individuo2))
 
-    Snew = S[index][:]
-    random.shuffle(Snew)
+    # Añadir los elementos que faltan para completar
+    nuevo_individuo1.extend(faltantes1)
+    nuevo_individuo2.extend(faltantes2)
+
+    # Asegurar que ambos individuos comiencen y terminen en 0
+    if nuevo_individuo1[-1] != 0:
+        nuevo_individuo1.append(0)
+    if nuevo_individuo2[-1] != 0:
+        nuevo_individuo2.append(0)
+    if nuevo_individuo1[0] != 0:
+        nuevo_individuo1.insert(0, 0)
+    if nuevo_individuo2[0] != 0:
+        nuevo_individuo2.insert(0, 0)
+
+    # Calcular la energía potencial de las nuevas estructuras
+    EPnew1 = calcular_energia(nuevo_individuo1, cost_matriz)
+    EPnew2 = calcular_energia(nuevo_individuo2, cost_matriz)
+    
+    # Crear los nuevos individuos
+    new1 = {length: nuevo_individuo1, 'EP': EPnew1, 'EK': 0}
+    new2 = {length+1: nuevo_individuo2, 'EP': EPnew2, 'EK': 0}
+    
+    print("Nuevo individuo 1:", new1)
+    print("Nuevo individuo 2:", new2)
+
+    # Seleccionar el mejor nuevo individuo (con menor energía potencial)
+    if new1['EP'] < new2['EP']:
+        new = new1
+    else:
+        new = new2
 
     
-    # Calcular la energía potencial de la nueva estructura
-    EPnew = calcular_energia(Snew, cost_matriz)
-    
-    # Crear un nuevo individuo con la estructura vecina
-    new = {index: Snew, 'EP': EPnew, 'EK': 0}
-    
-    # Verificar si la colisión ineficaz permite el cambio
-    if S['EP'] + S['EK'] >= new['EP']:
-        q = random.uniform(KEL, 1)  
-        KEnew = (S['EP'] + S['EK'] - new['EP']) * q
-        buffer += (S['EP'] + S['EK'] - new['EP']) * (1 - q)
-        print(f"{S}+1")
-        # Actualizar la estructura y energías del individuo
-        S=Snew
-        
 
-        
+    temp=S['EP']+S['EK']-new1['EP']-new2['EP']
+    success=False
+
+    if temp>=0:
+        success=True
+        k=random.randrange(0,1)
+        new1['EK']=temp*k
+        new2['EK']=temp*(1-k)
+        # Agregar los nuevos individuos a la población
+        poblacion.append(new1)
+        poblacion.append(new2)
+    elif temp+buffer>=0:
+        success=True
+        m1=random.randrange(0,1)
+        m2=random.randrange(0,1)
+        m3=random.randrange(0,1)
+        m4=random.randrange(0,1)
+        new1['EK']=(temp+buffer) *m1*m2
+        new2['EK']=(temp+buffer-new1['EK'])*m3*m4
+        buffer=temp+buffer-new1['EK']-new2['EK']
+        # Agregar los nuevos individuos a la población
+        poblacion.append(new1)
+        poblacion.append(new2)
+    else:
+        success=False
+
+    for individuo in poblacion:
+        print(individuo)
     return S, buffer
 
 def energia_total(poblacion):
@@ -80,9 +146,9 @@ def ejecutar(matriz):
     KEL=0.1
     buffer=Etotal*0.10
     S=poblacion[ran]
-    print (S)
-    contra_pared(S,buffer,KEL)
-    print (S)
+
+    S,buffer=contra_pared(S,buffer,KEL,poblacion,matriz)
+
     
     
     

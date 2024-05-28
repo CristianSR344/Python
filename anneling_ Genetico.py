@@ -150,6 +150,6 @@ def muestra():
     print(avg)
     
 
-best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
-print (best_solucion, best_energy)
-# muestra()
+# best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+# print (best_solucion, best_energy)
+muestra()
