@@ -103,9 +103,10 @@ def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
     #Realiza la búsqueda de la mejor solución utilizando el algoritmo de enfriamiento simulado.
     T = temp_inicial
     Tf = temp_final
-    individuos=50
+    individuos=100
     poblacion=crear_poblacion_inicial(individuos,matriz)
     S=random.choice(poblacion)
+    print(S)
     ES=calcular_energia(S,matriz)
     Smejor,ESmejor = S,ES
       
