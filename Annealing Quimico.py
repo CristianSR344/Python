@@ -62,16 +62,66 @@ def selecciona_el_mejor_individuo(poblacion, matriz):
 def seleccionar_una_poblacion(poblacion, n):
     return random.sample(poblacion, n)
 
+def combinar(individuo1, individuo2):
+    # Obtener el índice de los individuos en S
+    index1 = next(iter(individuo1))
+    index2 = next(iter(individuo2))
+    punto_cruce=random.randrange(2,11)
+    a=individuo1[index1][:punto_cruce]
+    b=individuo1[index1][punto_cruce:]
+    c=individuo2[index2][:punto_cruce]
+    d=individuo2[index2][punto_cruce:]
+
+    nuevo_individuo1=a[:]
+    nuevo_individuo2=c[:]
+    
+    for nodo in d:
+        if not nodo in nuevo_individuo1:
+            nuevo_individuo1.append(nodo)
+
+    
+    for nodo in b:
+        if nodo not in nuevo_individuo2:
+            nuevo_individuo2.append(nodo)
+
+    # Asegurarse de que los nuevos individuos tengan todos los elementos necesarios
+    # Obtener todos los elementos posibles
+    todos_elementos = set(range(len(individuo1)-1))
+    
+    # Encontrar los elementos que faltan
+    faltantes1 = list(todos_elementos - set(nuevo_individuo1))
+    faltantes2 = list(todos_elementos - set(nuevo_individuo2))
+
+    
+    
+    # Añadir los elementos que faltan para completar
+    nuevo_individuo1.extend(faltantes1)
+    nuevo_individuo2.extend(faltantes2)
+    
+    if nuevo_individuo1[-1] != 0:
+        nuevo_individuo1.append(0)
+    
+    if nuevo_individuo2[-1] != 0:
+        nuevo_individuo2.append(0)
+        
+        
+    return nuevo_individuo1, nuevo_individuo2
+
 def perturbar_con_reaccion_quimica(S,buffer,poblacion,KEL,matriz):
     ran=random.randint(1,4)
     if ran==1:
-        contra_pared(S,buffer,KEL)
+        S,buffer=contra_pared(S,buffer,KEL)
     elif ran==2:
-        descomposicion(S, buffer,KEL,poblacion,matriz)
-#     elif ran==3:
-#         intramolecular_ineficaz(S)
-#     elif ran==4:
-#         sintesis(S,poblacion)
+        S,buffer=descomposicion(S, buffer,KEL,poblacion,matriz)
+    elif ran==3:
+        ran2=random.randrange(0,len(poblacion)-1) 
+        S2=poblacion[ran2]
+        intramolecular_ineficaz(S,S2, buffer,KEL,poblacion,matriz)
+    elif ran==4:
+        ran2=random.randrange(0,len(poblacion)-1) 
+        S2=poblacion[ran2]
+        sintesis(S,S2, buffer,KEL,poblacion,matriz)
+    return S,buffer
 
 def contra_pared(S, buffer,KEL):
     # Obtener una nueva estructura vecina aleatoria
@@ -86,7 +136,7 @@ def contra_pared(S, buffer,KEL):
     EPnew = calcular_energia(Snew, cost_matriz)
     # Crear un nuevo individuo con la estructura vecina
     new = {index: Snew, 'EP': EPnew, 'EK': 0}
-    print (new)
+
     
     # Verificar si la colisión ineficaz permite el cambio
     if S['EP'] + S['EK'] >= new['EP']:
@@ -99,8 +149,56 @@ def contra_pared(S, buffer,KEL):
         S['EK'] = KEnew
     return S, buffer
 
+def intramolecular_ineficaz(S1,S2, buffer,KEL,poblacion,matriz):
+    length = len(poblacion)
+    # Obtener el índice de los individuos en S
+    index1 = next(iter(S1))
+    index2=next(iter(S2))
+    
+
+    # Obtener la estructura actual y mantener el primer y último elemento como 0
+    Snew1 = S1[index1][1:-1]  # Excluir el primer y último elemento (ambos 0)
+    random.shuffle(Snew1)  # Barajar los elementos intermedios
+    Snew1 = [0] + Snew1 + [0]  # Volver a agregar 0 al inicio y al final
+    
+
+    # Obtener la estructura actual y mantener el primer y último elemento como 0
+    Snew2 = S2[index2][1:-1]  # Excluir el primer y último elemento (ambos 0)
+    random.shuffle(Snew2)  # Barajar los elementos intermedios
+    Snew2 = [0] + Snew2 + [0]  # Volver a agregar 0 al inicio y al final
+    
+    #Obtener energia de los individuos
+    EPnew1=calcular_energia(Snew1,matriz)
+    EPnew2=calcular_energia(Snew2,matriz)
+    
+    new1={'i1':Snew1, 'EP': EPnew1, 'EK':0}
+    new2={'i2':Snew2, 'EP': EPnew2, 'EK':0}
+    
+    
+    
+    temp=(S1['EP']+S2['EP']+S1['EK']+S2['EK'])-(new1['EP']+new2['EP'])
+    
+    if temp>=0:
+        p=random.randrange(0,1)
+        EKnew1=temp*p
+        EKnew2=temp * (1-p)
+        S1[index1]=new1['i1'][:]
+        S1['EP']=new1['EP']
+        S1['EK']=new1['EK']
+        S2[index2]=new2['i2'][:]
+        S2['EP']=new2['EP']
+        S2['EK']=new2['EK']
+
+     
+ 
+    if S1['EP']>S2['EP']:   
+        return S1, buffer
+    
+    else:
+        return S2,buffer
+
 def descomposicion(S, buffer,KEL,poblacion,matriz):
-    print("Estado inicial de S:", S)
+
     length = len(poblacion)
     
     # Obtener el índice del individuo en S
@@ -115,8 +213,7 @@ def descomposicion(S, buffer,KEL,poblacion,matriz):
     # Dividir la estructura en dos partes
     a = estructura_actual[:punto_cruce]
     b = estructura_actual[punto_cruce:]
-    print("Parte A:", a)
-    print("Parte B:", b)
+
     
     # Crear dos nuevos individuos a partir de las dos partes
     nuevo_individuo1 = a[:]
@@ -151,8 +248,6 @@ def descomposicion(S, buffer,KEL,poblacion,matriz):
     new1 = {length: nuevo_individuo1, 'EP': EPnew1, 'EK': 0}
     new2 = {length+1: nuevo_individuo2, 'EP': EPnew2, 'EK': 0}
     
-    print("Nuevo individuo 1:", new1)
-    print("Nuevo individuo 2:", new2)
 
     # Seleccionar el mejor nuevo individuo (con menor energía potencial)
     if new1['EP'] < new2['EP']:
@@ -188,55 +283,81 @@ def descomposicion(S, buffer,KEL,poblacion,matriz):
     else:
         success=False
 
-    for individuo in poblacion:
-        print(individuo)
     return S, buffer
     
+def sintesis(S1,S2, buffer,KEL,poblacion,matriz):
+    # Obtener el índice de los individuos en S
+    index1 = next(iter(S1))
+    index2 = next(iter(S2))
+    length=len(poblacion)
+    
+    Snew1,Snew2=combinar(S1,S2)
+    
+    #Obtener energia de los individuos
+    EPnew1=calcular_energia(Snew1,matriz)
+    EPnew2=calcular_energia(Snew2,matriz)
+    
+    new1={length:Snew1, 'EP': EPnew1, 'EK':0}
+    new2={length:Snew2, 'EP': EPnew2, 'EK':0}
+    
+    if new1['EP']>new2['EP']:
+        nuevo_individuo=new1
+    else:
+        nuevo_individuo=new2
+    
+    temp=(S1['EP']+S2['EP']+S1['EK']+S2['EK'])-(new1['EP']+new2['EP'])
+    success=False
+    if S1['EP']+S2['EP']+S1['EK']+S2['EK']>=nuevo_individuo['EP']:
+        success=True
+        EKnuevo= S1['EP']+S2['EP']+S1['EK']+S2['EK'] - nuevo_individuo['EP']
+        nuevo_individuo['EK']=EKnuevo
+        poblacion.append(nuevo_individuo)
+    else:
+        success=False
+    return nuevo_individuo, success,buffer
 
 def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
     #Realiza la búsqueda de la mejor solución utilizando el algoritmo de enfriamiento simulado.
     T = temp_inicial
     Tf = temp_final
-    individuos=50
-    poblacion=crear_poblacion_inicial(individuos,matriz)
-    for i in range(individuos):
-        print(poblacion[i]) 
+    individuos=100
+    poblacion=crear_poblacion_inicial(individuos,matriz) 
     ran=random.randrange(0,individuos-1)   
     S=poblacion[ran]
-    ES=calcular_energia(S,matriz)
+    ES=S['EP']
     Etotal=energia_total(poblacion)
     buffer=Etotal/0.5
     Smejor = S
-    ESmejor = ES
+    ESmejor=S['EP']
     while T > Tf:
          n=1
-         while n<=300: 
+         while n<=100: 
              KEL=random.randrange(0,1)
-             Snew = perturbar_con_reaccion_quimica(S, buffer,KEL,poblacion,matriz)
-             ESnew=calcular_energia(Snew)      
+             Snew,buffer = perturbar_con_reaccion_quimica(S, buffer,poblacion,KEL,matriz)
+             ESnew=Snew['EP'] 
              diferencia = ESnew - ES
-
-             # Si la nueva solución es mejor, o se acepta una peor con cierta probabilidad para evitar mínimos locales
+             # Si la nueva solución es mejor, o se acepta una peor 
              if diferencia < 0:
                  S = Snew
-                 ES = ESnew
+                 ES = Snew['EP']
                  # Si la nueva solución es la mejor hasta el momento, se actualiza Smejor y ESmejor
                  if ES < ESmejor:
-                     Smejor = S[:]
-                     ESmejor = ES
+                     Smejor = S
+                     ESmejor = S['EP']
+
                     
              else:
                  probabilidad=math.exp(-diferencia / T) 
                  if probabilidad> random.random():
                      S=Snew
-                     ES=ESnew 
-                    
+                     ES=S['EP']
+
              n+=1
 
          # Se enfría la temperatura según la tasa de enfriamiento
          T *= coef_enfriamiento 
           
-    return Smejor, ESmejor
+    return Smejor
 
 # Parámetros para el algoritmo
 temp_inicial = 10000
@@ -250,17 +371,16 @@ def muestra():
     avg=0
     for i in range(0,30):
         temp=[]
-        best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
-        temp=[best_solucion, best_energy]
+        best_solucion = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+        temp=[best_solucion]
         mu.append(temp)
-        avg+=best_energy
-        print (best_solucion, best_energy)
+        avg+=best_solucion['EP']
+        print (best_solucion)
     avg=avg/30
     print(avg)
     
-
 # best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
 # print (best_solucion, best_energy)
-# muestra()
+muestra()
 
-simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+# simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
