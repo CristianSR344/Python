@@ -16,12 +16,33 @@ cost_matriz = [[-1, 513, 507, 1190, 1100, 1150, 1280, 1230, 1120, 1270, 1030, 10
                [938, 958, 877, 850, 787, 773, 809, 273, 165, 315, 162, 50, -1]]
 
 
+
+
+
+def mutacion(individuo):
+    index = next(iter(individuo))
+    Snew = individuo[index][1:-1].copy()
+    a, b = random.sample(range(1, len(Snew) - 1), 2)  # Elige dos puntos para intercambiar, sin incluir el primero y el último (0)
+    Snew[a], Snew[b] = Snew[b], Snew[a]
+    Snew = [0] + Snew + [0]
+
+    return individuo 
+
 def calcular_energia(solucion, matriz):
+
     distancia = 0
     for i in range(len(solucion) - 1):
         distancia += matriz[solucion[i]][solucion[i + 1]]
     return distancia
 
+def calcular_energia_ind(solucion, matriz):
+    index1 = next(iter(solucion))
+    solucion=solucion[index1][:]
+    distancia = 0
+    for i in range(len(solucion) - 1):
+        distancia += matriz[solucion[i]][solucion[i + 1]]
+        
+    return distancia
 
 def crear_solucion_aleatoria(matriz):
     lugares = list(range(1, len(matriz)))  # Excluye el punto de inicio (0)
@@ -41,14 +62,15 @@ def crear_poblacion_inicial(n, matriz):
         })
     return poblacion
 
-
+n=0
 def selecciona_el_mejor_individuo(poblacion, matriz):
     mejor_individuo = poblacion[0]
     mejor_energia = calcular_energia(mejor_individuo[next(iter(mejor_individuo))], matriz)
-    for individuo in poblacion:
-        energia = calcular_energia(individuo[next(iter(individuo))], matriz)
+    for individuo in range(len(poblacion)-1):
+        energia = calcular_energia_ind(poblacion[individuo], matriz)
         if energia < mejor_energia:
             mejor_individuo, mejor_energia = individuo, energia
+    mejor_individuo =poblacion[mejor_individuo]
     return mejor_individuo, mejor_energia
 
 
@@ -66,8 +88,8 @@ def combinar(individuo1, individuo2):
     c = individuo2[index2][:punto_cruce]
     d = individuo2[index2][punto_cruce:]
 
-    nuevo_individuo1 = a[:]
-    nuevo_individuo2 = c[:]
+    nuevo_individuo1 = a[:].copy()
+    nuevo_individuo2 = c[:].copy()
 
     for nodo in d:
         if nodo not in nuevo_individuo1:
@@ -93,7 +115,9 @@ def combinar(individuo1, individuo2):
     if nuevo_individuo2[-1] != 0:
         nuevo_individuo2.append(0)
 
-    return nuevo_individuo1, nuevo_individuo2
+    individuo1[index1]=nuevo_individuo1.copy()
+    individuo2[index2]=nuevo_individuo2.copy()
+    return individuo1, individuo2
 
 
 def perturbar_con_reaccion_quimica(S, buffer, poblacion, KEL, matriz):
@@ -119,7 +143,8 @@ def contra_pared(S, buffer, KEL,poblacion):
     Snew = S[index][1:-1].copy()
     a, b = random.sample(range(1, len(Snew) - 1), 2)  # Elige dos puntos para intercambiar, sin incluir el primero y el último (0)
     Snew[a], Snew[b] = Snew[b], Snew[a]
-    Snew= [0] + Snew + [0]
+    Snew = [0] + Snew + [0]
+    
 
     EPnew = calcular_energia(Snew, cost_matriz)
     new = {length: Snew, 'EP': EPnew, 'EK': 0}
@@ -235,10 +260,11 @@ def descomposicion(S, buffer, poblacion, matriz):
 
 
 def sintesis(S1, S2, buffer, poblacion, matriz):
+
     Snew1, Snew2 = combinar(S1, S2)
 
-    EPnew1 = calcular_energia(Snew1, matriz)
-    EPnew2 = calcular_energia(Snew2, matriz)
+    EPnew1 = calcular_energia_ind(Snew1, matriz)
+    EPnew2 = calcular_energia_ind(Snew2, matriz)
 
     length = len(poblacion)
     new1 = {length: Snew1, 'EP': EPnew1, 'EK': 0}
@@ -273,73 +299,91 @@ def energia_total(poblacion):
         Etotal += celula["EP"]
     return Etotal
 
-def simulated_annealing(matriz, temp_inicial, temp_final, coef_enfriamiento):
-    #Realiza la búsqueda de la mejor solución utilizando el algoritmo de enfriamiento simulado.
-    T = temp_inicial
-    Tf = temp_final
-    individuos=100
-    poblacion=crear_poblacion_inicial(individuos,matriz) 
-    ran=random.randrange(0,individuos-1)   
-    S=poblacion[ran]
-    ES=S['EP']
+
+
+
+def algoritmo_genetico(matriz, num_generaciones, tamano_poblacion, tasa_mutacion):
+    poblacion = crear_poblacion_inicial(tamano_poblacion, matriz)
+    n=0
+    num_individuos = 100
     Etotal=energia_total(poblacion)
     buffer=Etotal/0.5
-    Smejor = S.copy()
-    ESmejor=S['EP']
-    while T > Tf:
-         n=1
-         while n<=50: 
-             KEL=random.randrange(0,1)
-             
-             Snew,buffer= perturbar_con_reaccion_quimica(S, buffer,poblacion,KEL,matriz)
+    while n<num_generaciones:
+        KEL=random.randrange(0,1)
+        mejor,Emejor=selecciona_el_mejor_individuo(poblacion, matriz)
+        individuo=random.choice(poblacion)
+        #Se combinan los individuos
+        Snew1,Snew2=combinar(mejor,individuo)
+        Snew1,buffer= perturbar_con_reaccion_quimica(Snew1, buffer,poblacion,KEL,matriz)
+        Snew2,buffer= perturbar_con_reaccion_quimica(Snew2, buffer,poblacion,KEL,matriz)
 
-             ESnew=Snew['EP'] 
-             diferencia = ESnew - ES
-             # Si la nueva solución es mejor, o se acepta una peor 
-             if diferencia < 0:
-                 S = Snew.copy()
-                 ES = Snew['EP']
-                 # Si la nueva solución es la mejor hasta el momento, se actualiza Smejor y ESmejor
-                 if ES < ESmejor:
-                     Smejor = S.copy()
-                     ESmejor = S['EP']
+        index1 = next(iter(Snew1))
+        index2 = next(iter(Snew2))
 
-                    
-             else:
-                 probabilidad=math.exp(-diferencia / T) 
-                 if probabilidad> random.random():
-                     S=Snew.copy()
-                     ES=S['EP']
+        #Calcular la energia de los individuos
+        ESnew1=Snew1['EP']
+        ESnew2=Snew2['EP']
+        
+        poblacion.append(Snew1)
+        poblacion.append(Snew2)  
+        bandera=False
+        #Compara para encontrar el mejor individuo
+        if(ESnew1>ESnew2):
+            mejor_actual=Snew1
+        else:
+            mejor_actual=Snew2
+        
+        if  random.random()<tasa_mutacion:
+             mutar=mutacion(mejor_actual)
+        
+        poblacion.append(mejor_actual)
+        
+        #Ingresa los individuos a la poblacion
+        Emejor_actual=mejor_actual['EP']
+        
+        #Acepta al mejor actual como el mejor
+        if Emejor_actual<Emejor:
+            mejor, Emejor=mejor_actual,Emejor_actual
+         
+        S, E = selecciona_el_mejor_individuo(poblacion, cost_matriz)
+        S, buffer = perturbar_con_reaccion_quimica(S, buffer, poblacion, KEL, cost_matriz)
+        E2 = S['EP']
+        poblacion.append(S)
+        poblacion = sorted(poblacion, key=lambda x: x['EP'])[:num_individuos]
+        
+  
+        n+=1
+     
+    
+    return mejor, Emejor
 
-             n+=1
+tasa_mutacion = 0.1
+tamano_poblacion = 100
+num_generaciones = 300
+# Ejecutar el algoritmo genético
+mejor_ruta, mejor_costo = algoritmo_genetico(cost_matriz, num_generaciones, tamano_poblacion, tasa_mutacion)
 
-         # Se enfría la temperatura según la tasa de enfriamiento
-         T *= coef_enfriamiento 
-          
-    return Smejor
-
-# Parámetros para el algoritmo
-temp_inicial = 10000
-temp_final = 0.01
-coef_enfriamiento = 0.99
-
-# Ejecución del algoritmo de enfriamiento simulado con la matriz de costos de ejemplo
+def nombres(lista,lugares):
+    nueva_lista = []
+    for i in lista:
+        nueva_lista.append(lugares[i][1])
+    return nueva_lista
 
 def muestra():
     mu=[]
     avg=0
     for i in range(0,30):
         temp=[]
-        best_solucion = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
-        temp=[best_solucion]
+        mejor_ruta, mejor_costo = algoritmo_genetico(cost_matriz, num_generaciones, tamano_poblacion, tasa_mutacion)
+        print(mejor_ruta,mejor_costo)
+        temp=[mejor_ruta, mejor_costo]
         mu.append(temp)
-        avg+=best_solucion['EP']
-        print (best_solucion)
+        avg+=mejor_costo
+        
     avg=avg/30
     print(avg)
-    
-# best_solucion= simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
-# print (best_solucion)
-muestra()
 
-# simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+
+mejor_ruta, mejor_costo = algoritmo_genetico(cost_matriz, num_generaciones, tamano_poblacion, tasa_mutacion)
+
+print(mejor_ruta,mejor_costo)

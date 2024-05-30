@@ -2,22 +2,42 @@ import random
 import math
 import csv
 
-cost_matriz = [[-1,513,507,1190,1100,1150,1280,1230,1120,1270,1030,1000,962],
-         [518,-1,100,804,714,804,928,1210,1100,1220,1030,1010,968],
-         [495,82,-1,755,661,748,869,1120,1020,1140,947,926,883],
-         [1190,795,747,-1,99,82,155,925,880,899,873,863,851],
-         [1090,704,656,101,-1,96,214,886,831,867,814,805,787],
-         [1160,799,741,79,97,-1,123,845,802,817,799,786,775],
-         [1270,915,863,148,216,118,-1,840,812,806,817,809,804],
-         [1220,1200,1120,926,886,841,835,-1,115,57,200,221,273],
-         [1100,1090,1010,878,829,798,813,118,-1,164,84,110,152],
-         [1260,1220,1140,895,863,820,803,63,159,-1,252,269,314],
-         [1010,1030,944,869,811,789,815,200,90,246,-1,23,68],
-         [987,1010,922,864,804,785,816,229,116,269,26,-1,43],
-         [938,958,877,850,787,773,809,273,165,315,162,50,-1]
-         ]
+cost_matriz = [[-1, 513, 507, 1190, 1100, 1150, 1280, 1230, 1120, 1270, 1030, 1000, 962],
+               [518, -1, 100, 804, 714, 804, 928, 1210, 1100, 1220, 1030, 1010, 968],
+               [495, 82, -1, 755, 661, 748, 869, 1120, 1020, 1140, 947, 926, 883],
+               [1190, 795, 747, -1, 99, 82, 155, 925, 880, 899, 873, 863, 851],
+               [1090, 704, 656, 101, -1, 96, 214, 886, 831, 867, 814, 805, 787],
+               [1160, 799, 741, 79, 97, -1, 123, 845, 802, 817, 799, 786, 775],
+               [1270, 915, 863, 148, 216, 118, -1, 840, 812, 806, 817, 809, 804],
+               [1220, 1200, 1120, 926, 886, 841, 835, -1, 115, 57, 200, 221, 273],
+               [1100, 1090, 1010, 878, 829, 798, 813, 118, -1, 164, 84, 110, 152],
+               [1260, 1220, 1140, 895, 863, 820, 803, 63, 159, -1, 252, 269, 314],
+               [1010, 1030, 944, 869, 811, 789, 815, 200, 90, 246, -1, 23, 68],
+               [987, 1010, 922, 864, 804, 785, 816, 229, 116, 269, 26, -1, 43],
+               [938, 958, 877, 850, 787, 773, 809, 273, 165, 315, 162, 50, -1]]
 
 
+lugares = [
+    [0, "ITS"],
+    [1, "SAMS"],
+    [2, "Galerías Saltillo"],
+    [3, "UAdC"],
+    [4, "Home Depot"],
+    [5, "UANE Saltillo"],
+    [6, "Tupy Saltillo"],
+    [7, "Roller Rock Saltillo"],
+    [8, "Al Super V. Carranza"],
+    [9, "Club Deportivo San Isidro Saltillo"],
+    [10, "Christus Muguerza Saltillo"],
+    [11, "Costco Saltillo"],
+    [12, "Villa Ferré Saltillo"],
+    [13, "Parque El Chapulín"],
+    [14, "Museo del Desierto"],
+    [15, "Estadio Olímpico"],
+    [16, "Plaza de Armas"],
+    [17, "Biblioteca Central del Estado"],
+    [18, "Universidad La Salle Saltillo (ULSA)"]
+]
 
 def calcular_energia(solucion, matriz):
     # Calcula la energía total de la solución basada en la matriz de costos.
@@ -96,10 +116,20 @@ def muestra():
         temp=[]
         best_solucion, best_energy = simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
         temp=[best_solucion, best_energy]
+        
         mu.append(temp)
         avg+=best_energy
         
     avg=avg/30
-    
-simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+
+def nombres(lista,lugares):
+    nueva_lista = []
+    for i in lista:
+        nueva_lista.append(lugares[i][1])
+    return nueva_lista
+  
+mejor,ESmejor=simulated_annealing(cost_matriz, temp_inicial, temp_final, coef_enfriamiento)
+mejor=nombres(mejor,lugares)
+
+print(mejor,ESmejor)
 
