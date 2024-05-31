@@ -178,6 +178,7 @@ def muestra():
     for i in range(0,30):
         temp=[]
         mejor_ruta, mejor_costo = algoritmo_genetico(cost_matriz, num_generaciones, tamano_poblacion, tasa_mutacion)
+        mejor_ruta=nombres(mejor_ruta,lugares)
         print(mejor_ruta,mejor_costo)
         temp=[mejor_ruta, mejor_costo]
         mu.append(temp)
@@ -187,6 +188,9 @@ def muestra():
     print(avg)
 
 
-mejor_ruta, mejor_costo = algoritmo_genetico(cost_matriz, num_generaciones, tamano_poblacion, tasa_mutacion)
-mejor_ruta=nombres(mejor_ruta,lugares)
-print(mejor_ruta,mejor_costo)
+# mejor_ruta, mejor_costo = algoritmo_genetico(cost_matriz, num_generaciones, tamano_poblacion, tasa_mutacion)
+# mejor_ruta=nombres(mejor_ruta,lugares)
+# print(mejor_ruta,mejor_costo)
+
+muestra()
+
